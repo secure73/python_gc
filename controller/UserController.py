@@ -22,5 +22,5 @@ class UserController(IController):
         return {"success": "user destroyed successfully"}
     
     def put(self,data):
-        return {"success": f"user updated successfully {arg} , {data}"}
+        return {"success": f"user updated successfully {self} , {data}"}
     
