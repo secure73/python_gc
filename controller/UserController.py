@@ -1,11 +1,14 @@
 from interface.IController import IController
 from model.UserModel import UserModel
+from helper.HTTP_Response import HTTP_Response
 class UserController(IController):
     def __init__(self):
         pass
     
-    def get(self,data):
-         return {"success": "call User get successfully!"}
+    def get(self):
+         response = HTTP_Response()
+         response.success({"message":"it is successfull"})
+         return
     
     def post(self,data):
         userModel = UserModel()
@@ -22,5 +25,6 @@ class UserController(IController):
         return {"success": "user destroyed successfully"}
     
     def put(self,data):
-        return {"success": f"user updated successfully {data}"}
+        response = HTTP_Response()
+        response.success(data)
     

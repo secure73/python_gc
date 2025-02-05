@@ -10,13 +10,6 @@ This class is intended for beginners to understand the HTTP request lifecycle
 """
 class HttpHandler(BaseHTTPRequestHandler):
 
-    def _response(self, status_code, data):
-        """Send JSON response"""
-        self.send_response(status_code)
-        self.send_header('Content-Type', 'application/json')
-        self.end_headers()
-        self.wfile.write(json.dumps(data).encode('utf-8'))
-
     def do_GET(self):
         """Handle GET requests"""
         self._handle_request("GET")
@@ -39,8 +32,9 @@ class HttpHandler(BaseHTTPRequestHandler):
             controller_instance = self._createInstance(controller_name)
             method_to_call = self._createMethod(controller_instance,method_name)
             data = self._load_data(method_HTTP)
-            result = method_to_call(data) if method_HTTP in ["POST", "PUT"] else method_to_call()
-            self._response(200,result)
+            #response = method_to_call(data) if method_HTTP in ["POST", "PUT"] else method_to_call()
+            #self._response(200,result)
+            method_to_call(data) if method_HTTP in ["POST", "PUT"] else method_to_call()
        
         except Exception as e:
             self._response(500, {"error": str(e)})
