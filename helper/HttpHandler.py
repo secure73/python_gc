@@ -41,7 +41,7 @@ class HttpHandler(BaseHTTPRequestHandler):
         try:
             controller_name = controller_name.capitalize() # user => User
             controller_name = controller_name+"Controller" #=> User => UserController
-            module = importlib.import_module(f'controller.{controller_name}')  # Import UserController
+            module = importlib.import_module(f'controller.{controller_name}')  # Import controller.UserController
             controller_class = getattr(module, controller_name)  # Get class
             controller_instance = controller_class()  # Instantiate controller = UserController() 
 
