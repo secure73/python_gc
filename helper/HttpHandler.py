@@ -29,9 +29,9 @@ class HttpHandler(BaseHTTPRequestHandler):
 
     def _handle_request(self, method):
         """Dynamically route requests to the correct controller and method"""
-        # z.B: /UserController/get_user
+        # z.B: /user/get
         path_parts = self.path.strip('/').split('/')  
-
+        #[user,get]
         if len(path_parts) < 2:
             self._response(400, {"error": "Invalid request. Use /Controller/Method"})
             return
@@ -39,17 +39,17 @@ class HttpHandler(BaseHTTPRequestHandler):
         controller_name, method_name = path_parts[:2]  
 
         try:
-            controller_name = controller_name.capitalize()
-            controller_name = controller_name+"Controller"
-            module = importlib.import_module(f'controller.{controller_name}')  # Import controller
+            controller_name = controller_name.capitalize() # user => User
+            controller_name = controller_name+"Controller" #=> User => UserController
+            module = importlib.import_module(f'controller.{controller_name}')  # Import UserController
             controller_class = getattr(module, controller_name)  # Get class
-            controller_instance = controller_class()  # Instantiate class
+            controller_instance = controller_class()  # Instantiate controller = UserController() 
 
             if not hasattr(controller_instance, method_name):
                 self._response(404, {"error": f"Method '{method_name}' not found in {controller_name}"})
                 return
 
-            method_to_call = getattr(controller_instance, method_name)  # Get method reference
+            method_to_call = getattr(controller_instance, method_name)  # z.B Get method get
 
             data = None
             if method in ["POST", "PUT"]:
