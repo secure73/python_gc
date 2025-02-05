@@ -1,7 +1,13 @@
 import json
 import importlib
 from http.server import BaseHTTPRequestHandler, HTTPServer
-
+"""
+Note:This class is not suitable for production.
+It is designed solely for educational purposes to demonstrate how HTTP requests work. 
+There are several areas that could be cleaner, more optimized, and more secure for a production-level application.
+This class is intended for beginners to understand the HTTP request lifecycle 
+-and gain insights into how robust frameworks like Flask and Django handle requests efficiently.
+"""
 class HttpHandler(BaseHTTPRequestHandler):
 
     def _response(self, status_code, data):
@@ -23,51 +29,62 @@ class HttpHandler(BaseHTTPRequestHandler):
         """Handle PUT requests"""
         self._handle_request("PUT")
 
-    def do_DELETE(self):
-        """Handle DELETE requests"""
-        self._handle_request("DELETE")
+    #def do_DELETE(self):
+     #   """Handle DELETE requests"""
+      #  self._handle_request("DELETE")
 
-    def _handle_request(self, method):
+    def _handle_request(self, method_HTTP):
+        controller_name, method_name = self._validateRequestParts()
+        try:
+            controller_instance = self._createInstance(controller_name)
+            method_to_call = self._createMethod(controller_instance,method_name)
+            data = self._load_data(method_HTTP)
+            result = method_to_call(data) if method_HTTP in ["POST", "PUT"] else method_to_call()
+            self._response(200,result)
+       
+        except Exception as e:
+            self._response(500, {"error": str(e)})
+
+    def _validateRequestParts(self):
         """Dynamically route requests to the correct controller and method"""
         # z.B: /user/get
         path_parts = self.path.strip('/').split('/')  
         #[user,get]
         if len(path_parts) < 2:
-            self._response(400, {"error": "Invalid request. Use /Controller/Method"})
-            return
+           return self._response(400, {"error": "Invalid request. Use /Controller/Method"})
+        controller_name, method_name = path_parts[:2] 
+        controller_name = controller_name.capitalize() # user => User
+        controller_name = controller_name+"Controller" #=> User => UserController
+        return controller_name, method_name
+    
+    def _createInstance(self,controller_name:str)->object:
+            try:
+                module = importlib.import_module(f'controller.{controller_name}')  # Import controller.UserController
+                controller_class = getattr(module, controller_name)  # Get class
+                controller_instance = controller_class()  # Instantiate controller = UserController()
+                return controller_instance
+            except ImportError:
+                self._response({"internal": ImportError.msg})
 
-        controller_name, method_name = path_parts[:2]  
-
-        try:
-            controller_name = controller_name.capitalize() # user => User
-            controller_name = controller_name+"Controller" #=> User => UserController
-            module = importlib.import_module(f'controller.{controller_name}')  # Import controller.UserController
-            controller_class = getattr(module, controller_name)  # Get class
-            controller_instance = controller_class()  # Instantiate controller = UserController() 
-
-            if not hasattr(controller_instance, method_name):
-                self._response(404, {"error": f"Method '{method_name}' not found in {controller_name}"})
+    def _createMethod(self,controller_insance_to_run:object,method_name_to_create:str):
+        if not hasattr(controller_insance_to_run, method_name_to_create):
+                self._response(404, {"error": f"Method '{method_name_to_create}' not found in {type(controller_insance_to_run).__name__}"})
                 return
 
-            method_to_call = getattr(controller_instance, method_name)  # z.B Get method get
+        return getattr(controller_insance_to_run, method_name_to_create)  # z.B Get method get
 
-            data = None
-            if method in ["POST", "PUT"]:
+    def _load_data(self,HTTP_method)->None|object:
+            if HTTP_method in ["POST", "PUT"]:
                 content_length = int(self.headers.get('Content-Length', 0))
                 post_data = self.rfile.read(content_length).decode('utf-8')
                 try:
-                    data = json.loads(post_data)
+                    return json.loads(post_data)
                 except json.JSONDecodeError:
                     self._response(400, {"error": "Invalid JSON format"})
                     return
+            return None
 
-            result = method_to_call(data) if method in ["POST", "PUT"] else method_to_call()
-            self._response(200, {"success": True, "data": result})
 
-        except ModuleNotFoundError:
-            self._response(404, {"error": f"Controller '{controller_name}' not found"})
-        except Exception as e:
-            self._response(500, {"error": str(e)})
 
 def run(server_class=HTTPServer, handler_class=HttpHandler, port=8001):
     """Start the HTTP server"""
