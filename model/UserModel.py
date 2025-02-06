@@ -45,12 +45,14 @@ class UserModel(IModel):
                 user = session.query(UserTable).filter_by(email=email).first()
                 return {"id":user.id, "name":user.name , "email":user.email , "password":user.password} if user else None
             except SQLAlchemyError as e:
-                return {"error": f"Database failure: {str(e)}"}
+                self.error = f"Database failure: {str(e)}"
+                return None
 
     def update(self, user_id: int , name:str = None , password: str = None)->UserTable|None:
         user = self.single(user_id)
         if not user:
-            return {"error": "User not found"}
+            self.error = "User not found"
+            return None
         self.__validateUserInfo(name=name)
 
         with self.Session() as session:
@@ -69,12 +71,14 @@ class UserModel(IModel):
                 return self.single(user_id)
             except SQLAlchemyError as e:
                 session.rollback()
-            return { "error": f"DAtabase Error: {str(e)}"}
+                self.error = f"DAtabase Error: {str(e)}"
+            return None
 
     def remove(self, id:int)->bool:
         user = self.single(id)
         if not user:
-            return {"error": "User not found"}
+            self.error = "User not found"
+            return None
         with self.Session() as session:
             try:
                 session.delete(user)
