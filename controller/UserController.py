@@ -6,8 +6,8 @@ class UserController(IController):
     def __init__(self):
         pass
     
-    def get(self):
-        return Response.success({"message": "Request successful"})
+    def get(self,data):
+        return Response.success(data)
     
     def post(self, data):
         
