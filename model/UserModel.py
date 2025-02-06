@@ -10,14 +10,18 @@ class UserModel(IModel):
         self.Session = DBConnection.Session
         self.error = None
     
-    def create(self,email:str, password:str , name: str)->None|dict:
-        self.__validateUserInfo(name=name,email=email)
+    def create(self,email:str, password:str , name: str)->None|bool:
+        validation_result = self.__validateUserInfo(name=name,email=email)
+        if not validation_result:
+            return None
         if self.singleByEmail(email):
             self.error = "user already exists"
             return None
         #hashing password before insert into database
         hash_pass = self.__setPassword(password=password)
-        self.__insert(email,hash_pass,name)
+        if not hash_pass:
+            return None
+        return self.__insert(email,hash_pass,name)
          
     def single(self,id:int)->None|UserTable:
         with self.Session() as session:
@@ -84,17 +88,21 @@ class UserModel(IModel):
 
 #--------------------Private Methods ---------------------------------------
 
-    def __validateUserInfo(self, name: str = None , email: str = None):
+    def __validateUserInfo(self, name: str = None , email: str = None)->bool:
         if name:
             if not FormatCheck.minimumLength(name,2):
-                return {"error": "name lenght must have at least 2 charechters"}
+                self.error = "name lenght must have at least 2 charechters"
+                return False
         if email:
             if not FormatCheck.email(email=email):
-                return {"error": "your given email address dont follow email format, pleache check email address and try again"}
+                self.error = "your given email address dont follow email format, pleache check email address and try again"
+                return False
+        return True
     
-    def __setPassword(self, password:str):
+    def __setPassword(self, password:str)->None|str:
             if not FormatCheck.minimumLength(password,6):
-                return {"error": "password lenght must have at least 6 charechters"}
+                self.error = "password lenght must have at least 6 charechters"
+                return None
             return bcrypt.hashpw(password.encode(), bcrypt.gensalt()).decode()
     
     def __insert(self,email:str, password:str , name: str)->bool:
