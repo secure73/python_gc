@@ -8,11 +8,13 @@ from sqlalchemy import update
 class UserModel(IModel): 
     def __init__(self):
         self.Session = DBConnection.Session
+        self.error = None
     
-    def create(self,email:str, password:str , name: str):
+    def create(self,email:str, password:str , name: str)->None|dict:
         self.__validateUserInfo(name=name,email=email)
         if self.singleByEmail(email):
-            return {"error": "user already exists"}
+            self.error = "user already exists"
+            return None
         #hashing password before insert into database
         hash_pass = self.__setPassword(password=password)
         self.__insert(email,hash_pass,name)
@@ -22,7 +24,8 @@ class UserModel(IModel):
             try:
                 return session.query(UserTable).filter_by(id=id).first()
             except SQLAlchemyError as e:
-                return {"error": f"Database failure: {str(e)}"}
+                self.error = f"Database failure: {str(e)}"
+                return None
 
     def list(self):
         # with ist ein Ansatz dass macht Resouces frei nach dem nutzung. SQL Alchemy empfehlt thise method
@@ -90,11 +93,11 @@ class UserModel(IModel):
                 return {"error": "your given email address dont follow email format, pleache check email address and try again"}
     
     def __setPassword(self, password:str):
-            if not FormatCheck.minimumLenght(password,6):
+            if not FormatCheck.minimumLength(password,6):
                 return {"error": "password lenght must have at least 6 charechters"}
             return bcrypt.hashpw(password.encode(), bcrypt.gensalt()).decode()
     
-    def __insert(self,email:str, password:str , name: str):
+    def __insert(self,email:str, password:str , name: str)->bool:
         with self.Session() as session:
             try:
                 new_user = UserTable(email=email,password=password,name=name)
@@ -102,6 +105,7 @@ class UserModel(IModel):
             #method commit schreib änderungen in Datanbank , egal insert, update, oder delete . 
             # ohne commit , änderungen bleibt in session , und datenbank wurde Aktualiert nicht! 
                 session.commit()
-                return {"created": "user created successfully"}
+                return True
             except SQLAlchemyError as e:
-                return {"error": f"Database failure: {str(e)}"}
+                self.error = f"Database failure: {str(e)}"
+                return False

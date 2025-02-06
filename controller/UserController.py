@@ -10,10 +10,13 @@ class UserController(IController):
         return Response.success({"message": "Request successful"})
     
     def post(self, data):
+        
+        #return Response.success(data)
         userModel = UserModel()
-        created = userModel.create("anton@gmail.com", "123456", "Anton")
+        
+        created = userModel.create(data["email"], data["password"], data["name"])
         if not created: 
-            return Response.bad_request("Failed to create user")
+            return Response.bad_request(f"Failed to create user {userModel.error}")
         return Response.success({"success": "User created successfully"})
     
     def destroy(self, data):
@@ -24,4 +27,4 @@ class UserController(IController):
         return Response.success({"success": "User destroyed successfully"})
     
     def put(self, data):
-        return Response.success(data)
+        return Response.bad_request(data)
