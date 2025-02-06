@@ -82,7 +82,9 @@ class HttpHandler(BaseHTTPRequestHandler):
         self.end_headers()
         self.wfile.write(json.dumps(data).encode("utf-8"))
 
-def run(server_class=HTTPServer, handler_class=HttpHandler, port=8001):
+def run(port=8001):
+    server_class = HTTPServer
+    handler_class = HttpHandler
     server_address = ('', port)
     httpd = server_class(server_address, handler_class)
     print(f"Server running on port {port}...")
